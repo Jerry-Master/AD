@@ -1,0 +1,95 @@
+---
+title: "Practica 1"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+setwd("~/dades/linux/AD")
+library(dplyr)
+library(tidyr)
+library(car)
+```
+
+# First part
+## Data 
+```{r}
+dd <- read.table("PesAlcada.txt", header=T)
+head(dd)
+```
+## First questions
+### b)
+```{r}
+sprintf("There are %i students and %i variables", length(dd[,1]), length(dd[1,]))
+```
+### c)
+```{r}
+sprintf("Mean: %f, Variance: %f, of Pesmare", mean(dd$Pesmare), var(dd$Pesmare))
+sprintf("Mean: %f, Variance: %f, of Alcmare", mean(dd$Alcmare), var(dd$Alcmare))
+```
+### d)
+```{r}
+sprintf("The correlation is: %f", cor(dd$Pesmare, dd$Alcmare))
+```
+### e)
+```{r}
+with(dd, boxplot(Pesmare, Alcmare))
+```
+### f)
+```{r}
+sprintf("There are %i missing values", sum(dd == -1))
+sprintf("There are %i missing values in Pesmare and %i in Alcmare", colSums(dd == -1)["Pesmare"], colSums(dd == -1)["Alcmare"])
+```
+### g)
+```{r}
+with(dd, plot(Pesmare, Alcmare))
+sprintf("There are %i students with missing values at either Pesmare or Alcmare", with(dd, sum(Pesmare == -1 | Alcmare == -1)))
+sprintf("With a p-value of %f, there isn't a significative relation", summary(lm(Alcmare~Pesmare, dd))$coefficients[2,4])
+```
+### h)
+```{r}
+dd2 <- read.table("PesAlcada.txt", header=T, na.string=-1)
+
+sprintf("The correlation is now: %f", cor(dd2$Pesmare, dd2$Alcmare, use="na.or.complete"))
+
+sprintf("With a p-value of %f, there is a significative relation", summary(lm(Alcmare~Pesmare, dd2))$coefficients[2,4])
+```
+
+### i)
+```{r}
+dd3 <- dd2
+dd3$Alcmare[is.na(dd3$Alcmare)] <- mean(dd3$Alcmare, na.rm=T)
+dd3$Pesmare[is.na(dd3$Pesmare)] <- mean(dd3$Pesmare, na.rm=T)
+
+sprintf("Mean: %f, Variance: %f, of Pesmare", mean(dd3$Pesmare), var(dd3$Pesmare))
+sprintf("Mean: %f, Variance: %f, of Alcmare", mean(dd3$Alcmare), var(dd3$Alcmare))
+
+with(dd3, scatterplot(Pesmare, Alcmare, smooth=T))
+```
+
+### j)
+```{r}
+sprintf("The new correlation is %f", with(dd3, cor(Pesmare, Alcmare)))
+sprintf("It is less than before, which was %f. Because covariance decreases", cor(dd2$Pesmare, dd2$Alcmare, use="na.or.complete"))
+```
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
