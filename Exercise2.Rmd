@@ -1,0 +1,185 @@
+---
+title: "Practica1"
+author: "Álvaro Ribot"
+date: "10/02/2020"
+output: 
+  html_document: default
+  pdf_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercici 1
+
+
+
+### a) 
+```{r}
+library(car)
+x <- read.table("PesAlcada.txt", header = T)
+head(x)
+```
+
+### b)
+
+```{r}
+(n <- length(x[,1]))
+(p <- length(x[1,]))
+```
+### c)
+
+
+```{r}
+sprintf("Mitjana d'alçada de la mare es %f i la desviacio tipus %f", mean(x$Alcmare), sd(x$Alcmare))
+```
+```{r}
+sprintf("Mitjana de pes de la mare es %f i la desviacio tipus %f", mean(x$Pesmare), sd(x$Pesmare))
+```
+
+
+### d)
+
+```{r}
+cor(x$Pesmare, x$Alcmare)
+```
+A priori podem dir que no hi ha relacio
+
+### e)
+
+```{r}
+with(x, boxplot(Pesmare, Alcmare))
+```
+
+### f)
+
+
+```{r}
+x[,c("Pesmare", "Alcmare")]
+sprintf("Hi ha %i dades mancants, %i a Pesmare i %i a Alcmare", sum(x == -1), sum(x$Pesmare == -1), sum(x$Alcmare == -1))
+```
+
+
+### g)
+
+```{r}
+with(x, scatterplot(Pesmare, Alcmare, smooth = F))
+```
+
+```{r}
+sprintf("Hi ha %i dades mancants.", with(x, sum(Pesmare == -1 | Alcmare == -1)))
+```
+
+### h)
+
+
+```{r}
+dd <- read.table("PesAlcada.txt", header = T, na.strings = -1)
+#Pesmare[Pesmare==-1] <- NA
+head(dd)
+cor(dd$Pesmare, dd$Alcmare, use = "na.or.complete")
+summary(m1 <- lm(Alcmare~Pesmare, dat = dd))
+sprintf("Hi ha relacio significativa, amb un pvalor de %f", summary(m1)$coefficients[2,4])
+```
+
+### i)
+
+```{r}
+ddl <- dd 
+ddl$Pesmare[is.na(ddl$Pesmare)] <- mean(ddl$Pesmare, na.rm = T)
+ddl$Alcmare[is.na(ddl$Alcmare)] <- mean(ddl$Alcmare, na.rm = T)
+head(ddl)
+
+
+sprintf("Mitjana d'alçada de la mare es %f i la desviacio tipus %f", mean(ddl$Alcmare), sd(ddl$Alcmare))
+sprintf("Mitjana de pes de la mare es %f i la desviacio tipus %f", mean(ddl$Pesmare), sd(ddl$Pesmare))
+
+with(ddl, sp(Pesmare, Alcmare))
+```
+
+### j)
+
+```{r}
+cor(dd$Pesmare, dd$Alcmare, use = "na.or.complete")
+cor(ddl$Alcmare, ddl$Pesmare)
+```
+
+
+
+# Exercici 2
+
+### a)
+
+```{r}
+dd2 <- read.table("PovertyStudy.dat", header = T)
+head(dd2)
+```
+
+### b)
+
+```{r}
+pairs(dd2)
+```
+
+
+### c)
+```{r}
+dd2$GNP
+
+sprintf("Hi ha %i paisos que no tenen GNP", sum(dd2$GNP == -99))
+```
+Sembla que les dades codificades amb -99 son dades mancants.
+
+### d)
+```{r}
+dd2$GNP[dd2$GNP == -99] <- NA
+```
+
+### e)
+```{r}
+with(dd2, boxplot(GNP))
+with(dd2, qqnorm(GNP))
+```
+
+### f)
+```{r}
+library(MASS)
+boxcox(lm(GNP~1, dd2),lambda = seq(-1, 1, by=0.1))
+```
+Podem suposar $\lambda=0 \implies GNP^{(\lambda)}_{i}=ln(GNP_i)$
+
+
+### g)
+```{r}
+GNPmod <- log(dd2$GNP)
+boxplot(GNPmod)
+```
+Ara la distribucioha cambiat i la variable te menys outliers.
+
+
+### h)
+```{r}
+m2 <- lm(GNPmod~Birth+Death+Infant+LifeEM+LifeEF, dd2)
+anova(lm(GNPmod~1), m2)
+```
+
+### i)
+```{r}
+GNPmancant <- dd2[is.na(dd2$GNP),]
+predict(m2, newdata = GNPmancant)
+```
+
+### j)
+```{r}
+aaa <- anova(lm(GNPmod~1),m2)
+sprintf("La variancia dels residus és %f", resvar <- aaa$RSS[2]/aaa$Df[2])
+```
+
+
+
+### k)
+```{r}
+set.seed(123)
+rnorm(n = 6, sd = resvar)
+```
