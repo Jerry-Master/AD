@@ -3,8 +3,8 @@ title: "Practica1"
 author: "Álvaro Ribot & Jose Pérez Cano"
 date: "10/02/2020"
 output: 
-  html_document: default
   pdf_document: default
+  html_document: default
 ---
 
 
@@ -160,7 +160,7 @@ as.matrix(dist(dds[1:5,]))
 
 ### j) 
 The transformation in question is
-$f(\bf{x}) = \frac{\bf{x}-\overline{x}}{Var(\bf{x})}+\overline{x}$
+$f(\bf{x}) = \frac{\bf{x}-\overline{x}}{\sqrt{Var(\bf{x})}}+\overline{x}$
 where $\overline{x}$ is the vector where all entries are the mean of the vector x.
 ```{r}
 ddn <- t(t(dds)+apply(dd, MARGIN=2, FUN=mean))
