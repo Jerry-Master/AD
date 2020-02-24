@@ -1,0 +1,104 @@
+---
+title: "Lab2"
+author: "Álvaro Ribot"
+date: "24/02/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+# Exercici 1
+
+## a) 
+### Carregueu les dades dins l’entorn de R amb la instrucci ́o read.table. Cal- culeu l’edat (Age) dels atletes en anys amb Age = 2019 - Year of birth. Cal crear una nova matriu (o dataframe) contenint nomes les 10 variables a continuaci ́o que utilitzarem per un an`alisi de components principals: Age, Speed, Dist, DP, A, B, C, D, E i JP. Conv ́e etiquetar les files de la nova matriu amb els noms dels atletes, i etiquetar les columnes de la matriu amb els noms de les variables. La variable Total es guarda per separat i no s’utilitza com a variable d’entrada en el ACP. Quantes observacions cont ́e la base de dades? Feu boxplots de les variables amb la instrucci ́o boxplot. Feu una matriu de diagrames bivariants (scatterplot matrix) de les variables seleccionades. Comenteu els vostres resul- tats. Calculeu la matriu de correlacions.
+
+
+```{r}
+library(car)
+X <- read.table("http://www-eio.upc.es/~jan/Data/MVA/Einsiedeln.dat", header = T)
+X$Age <- 2019 - X$Year
+dd <- X[,c("Age", "Speed", "Dist", "DP", "A", "B", "C", "D", "E", "JP")]
+rownames(dd) <- paste(X$Name, X$Surname, sep = " ")
+Total <- X$Total
+boxplot(dd)
+pairs(dd)
+cor(dd)
+```
+
+## b)
+
+```{r}
+pca <- princomp(dd, cor =T)
+pca_perc <- pca$sdev/sum(pca$sdev)
+pca_cum <- cumsum(pca_perc)
+barplot(pca_perc, ylab = "PCA Percentage")
+barplot(pca_cum, ylab = "Cumulative PCA Percentage")
+screeplot(pca)
+summary(pca)
+```
+
+
+Two components may be used to explain the data since the cumulative percentage of variance explained by the first three principal component is greater than $84 \%$. Looking at the screeplot we can confirm this decision.
+
+## c)
+
+The last principal component variance is zero because there are two linearly dependent variables i.e. their correlation is $1$ (Speed and DP).
+
+## d)
+
+```{r}
+biplot(pca, cex =0.4)
+biplot(pca, xlim = c(-0.6, 0.2), ylim = c(-0.1, 0.1), cex = 0.2)
+```
+
+Tilen BARTOL is a possible anomaly. Looking at the boxplots we note that Tilen BARTOL is an outlier in variables A, B, C, D, E and JP. This means that he has very low scores.
+
+```{r}
+dd["Tilen BARTOL",]
+boxplot(dd$A, dd$B, dd$C, dd$D, dd$E)
+boxplot(dd$JP)
+```
+
+## e)
+
+```{r}
+dd2 <- dd[rownames(dd) != c("Tilen BARTOL"),]
+pca2 <- princomp(dd2, cor =T)
+pca2_perc <- pca2$sdev/sum(pca2$sdev)
+pca2_cum <- cumsum(pca2_perc)
+barplot(pca2_perc, ylab = "PCA Percentage")
+barplot(pca2_cum, ylab = "Cumulative PCA Percentage")
+screeplot(pca2)
+summary(pca2)
+biplot(pca2, cex =0.4)
+```
+
+## f)
+
+```{r}
+pca2sc <- as.data.frame(pca2["scores"])
+summary(pca2)
+apply(pca2sc, 2, sd)
+apply(pca2sc, 2, sd)*sqrt(69/70) - pca2$sdev
+```
+We obtain the same result scaled by $\sqrt{{\frac{69}{70}}}$
+
+## g)
+
+```{r}
+cor(as.matrix(pca2sc))
+```
+Nah
+
+## h)
+
+```{r}
+scale(as.matrix(dd2))
+eigen(t(scale(as.matrix(dd2)))%*%scale(as.matrix(dd2)))
+```
+
+
