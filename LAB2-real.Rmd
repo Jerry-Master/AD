@@ -1,0 +1,90 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(car)
+library(MASS)
+```
+
+
+# Exercise 2
+## a)
+```{r}
+ker <- read.table("http://www-eio.upc.es/~jan/Data/MVA/kernels.dat", header=T)
+head(ker)
+```
+
+## b) Perimeter and area are the most correlated.
+```{r}
+scatterplotMatrix(ker)
+cor(ker)
+```
+
+## c) Seems that 2 components are enough.
+```{r}
+ker2 <- scale(ker)
+acp <- princomp(ker2)
+summary(acp)
+screeplot(acp)
+```
+
+## d) The second component is principally afected by the compactness. While the first one is almost a mean, except for compactness. It can be seen as the second component almost being compactness and the first the rest.
+```{r}
+biplot(acp, cex=0.5)
+```
+
+## e) Lenght and groove, it isn't the same as the one given by the correlation matrix
+
+## f) It is greater in all components
+```{r}
+apply(acp$scores, 2, sd)
+acp$sdev
+```
+
+## g) It gives the projection matrix.
+```{r}
+acp$loadings
+```
+
+## h)
+```{r}
+plot(acp$scores[,1], acp$scores[,2], xlab="First component", ylab="Second component", pch=17, col="red")
+text(acp$scores[,1]+0.2, acp$scores[,2]+0.2, labels=rownames(ker))
+```
+
+
+## i) The correlation between different principal components is almost 0, as expected, i.e. the variables are independent.
+
+```{r}
+cor(as.matrix(acp$scores))
+```
+
+
+## j)
+
+```{r}
+X <- scale(ker)
+Y = svd(X)
+print(Y$d)
+```
+
+## k)
+
+```{r}
+pc <- Y$u%*%diag(Y$d)
+head(pc)
+```
+
+
+## l)
+
+```{r}
+plot(pc[,1:2])
+arrows(0,0,t(Y$v[1:2,]))
+```
+
+
+
+

@@ -7,6 +7,8 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(MASS)
+library(car)
 ```
 
 ## R Markdown
@@ -100,5 +102,130 @@ Nah
 scale(as.matrix(dd2))
 eigen(t(scale(as.matrix(dd2)))%*%scale(as.matrix(dd2)))
 ```
+
+# 3.-
+## a)
+```{r}
+cer <- read.table("http://www-eio.upc.es/~jan/Data/MVA/Cereals.dat", header = T)
+head(cer)
+attach(cer)
+```
+## b)
+```{r}
+cer[,c(-1,-2)] <- apply(cer[,c(-1,-2)], 2, scale)
+dis <- as.matrix(dist(cer[,c(-1,-2)]))
+dis[1:5,1:5]
+```
+
+## c) Yes, there are anomalies. There are distances bigger than 8 and quite near to 0.
+```{r}
+hist(dis[lower.tri(dis)], main='histogram of distances', xlab='', breaks=30)
+```
+
+## d)
+```{r}
+cer$colors <- 'blue'
+cer[Manufacturer=='G',]$colors <- 'red'
+cer[Manufacturer=='K',]$colors <- 'green'
+msd <- cmdscale(dis)
+plot(msd[,1], msd[,2], xlab='', ylab='', main='MSD', col=cer$colors)
+text(msd[,1]+0.2, msd[,2]+0.2, labels=Brand, cex=0.5)
+legend(x=4, y=0, legend=c('Q', 'G', 'K'), fill=c('blue', 'red', 'green'))
+```
+
+## e) 
+```{r}
+nd <- as.matrix(dist(msd[,1:2]))
+mins <- which(nd==min(nd[nd!=0]), arr.ind=T)
+cer[mins[,1],]
+```
+## f) 
+```{r}
+maxs <- which(nd==max(nd[nd!=0]), arr.ind=T)
+cer[maxs[,1],]
+```
+## g) The number of eigenvalues different to 0 (numerically different to 0, because 1e-13 can be considered 0 under the numeric error). So $k=8$.
+```{r}
+nmsd <- cmdscale(dis, eig=T)
+length(nmsd$eig)-sum(abs(nmsd$eig)<1e-13)
+```
+## h)
+```{r}
+print("Eigenvalues")
+nmsd$eig
+print("Goodness of fit")
+sum(nmsd$eig[1:2])/sum(nmsd$eig)
+```
+## i) Yes, because there are only 8 parameters, and so we can only have 8 dimensions, or equivalently 8 non-zero eigenvalues.
+## j)
+```{r}
+plot(x=nd[lower.tri(nd)], y=dis[lower.tri(dis)], xlab='adjusted distances', ylab='observed distances')
+abline(a=0,b=1, col='red')
+```
+## k)
+```{r}
+mds2 <- isoMDS(dis)
+plot(mds2$points[,1], mds2$points[,2], col=cer$colors, xlab='', ylab='')
+legend(x=5, y=0,legend=c('Q', 'G', 'K'), fill=c("blue", "red", "green"))
+text(mds2$points[,1]+0.2, mds2$points[,2]+0.2, Brand, cex=0.4)
+print("stress")
+print(mds2$stress)
+```
+## l) 
+```{r}
+nd2 <- as.matrix(dist(mds2$points[,1:2]))
+mins <- which(nd2==min(nd2[nd2!=0]), arr.ind=T)
+cer[mins[,1],]
+```
+## m)
+```{r}
+plot(x=nd2[lower.tri(nd2)], y=dis[lower.tri(dis)], xlab='adjusted distances', ylab='observed distances')
+abline(a=0,b=1, col='red')
+```
+## n) With 4 dimensions we have less than 5% of stress.
+```{r}
+stresses <- c()
+for (i in 1:5) {
+  stresses <- c(stresses, isoMDS(dis, k=i)$stress)
+}
+print(stresses)
+plot(stresses, type='l')
+```
+## o) The first variables of each method are correlated between them, as with the seconds. But the coordinates inside one method are uncorrelated as with the first of one and the second of the other.
+```{r}
+scatterplotMatrix(cbind(msd[,1:2],mds2$points))
+cor(cbind(msd[,1:2],mds2$points))
+```
+## p) It clearly gives different results.
+```{r}
+dis <- sqrt(dis)
+
+msd <- cmdscale(dis)
+plot(msd[,1], msd[,2], xlab='', ylab='', main='MSD', col=cer$colors)
+text(msd[,1]+0.2, msd[,2]+0.2, labels=Brand, cex=0.5)
+legend(x=4, y=0, legend=c('Q', 'G', 'K'), fill=c('blue', 'red', 'green'))
+
+nd <- as.matrix(dist(msd[,1:2]))
+plot(x=nd[lower.tri(nd)], y=dis[lower.tri(dis)], xlab='adjusted distances', ylab='observed distances')
+abline(a=0,b=1, col='red')
+```
+```{r}
+mds2 <- isoMDS(dis)
+plot(mds2$points[,1], mds2$points[,2], col=cer$colors, xlab='', ylab='')
+legend(x=5, y=0,legend=c('Q', 'G', 'K'), fill=c("blue", "red", "green"))
+text(mds2$points[,1]+0.2, mds2$points[,2]+0.2, Brand, cex=0.4)
+print("stress")
+print(mds2$stress)
+
+
+
+nd2 <- as.matrix(dist(mds2$points[,1:2]))
+plot(x=nd2[lower.tri(nd2)], y=dis[lower.tri(dis)], xlab='adjusted distances', ylab='observed distances')
+abline(a=0,b=1, col='red')
+```
+
+
+
+
 
 
