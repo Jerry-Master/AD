@@ -6,6 +6,7 @@ output: html_notebook
 ```{r}
 library(car)
 library(MASS)
+library(plotrix)
 ```
 
 
@@ -81,10 +82,98 @@ head(pc)
 ## l)
 
 ```{r}
-plot(pc[,1:2])
-arrows(0,0,t(Y$v[1:2,]))
+plot(pc[,1:2], xlab="", ylab="")
+arrows(x0=rep(0,7),y0=rep(0,7),x1=t(Y$v[1,1:7]),y1=t(Y$v[2,1:7]), length = 0.1, col="red")
+draw.circle(0,0,radius=1)
 ```
 
+## m)
 
+```{r}
+(abs(pc[1,1])+abs(pc[1,2]))/sum(abs(pc[1,]))
+```
+
+## n)
+
+```{r}
+sum(Y$d)
+```
+
+## o)
+
+```{r}
+sum(Y$d[1:3])/sum(Y$d) * 100
+```
+
+## p) Basically represents the asymmetry variable.
+
+```{r}
+Y$v
+```
+
+# 4
+## a)
+
+```{r}
+dist <- as.matrix(read.table("http://www-eio.upc.es/~jan/data/MVA/GeneticDist.txt"))
+dist[1:6,1:6]
+
+raza <- as.factor(c(rep("Afro", 342), rep("Caucasico", 361), rep("Asiatico", 97)))
+head(raza)
+```
+
+## b)
+
+```{r}
+pco <- cmdscale(dist, k = 3, eig=T)
+plot(pco$points[,1], pco$points[,2], xlab="", ylab="", col=c(rep("tan4", 342), rep("bisque", 361), rep("yellow", 97)))
+legend(x=-0.2, y=-0.1, legend=c("Afro", "Caucasian", "Asiatic"), fill=c("tan4","bisque","yellow"), cex=0.5)
+```
+
+## c) Yes, if k is equal to the number of genetics variables. Or k = 800 too.
+
+## d) Yes, because the distance matrix is centered to compute the MDS.
+
+```{r}
+sum(abs(pco$eig)<1E-13)
+```
+
+## e)
+
+```{r}
+sum(abs(pco$eig[1:2]))/sum(abs(pco$eig))
+```
+
+## f) It doesn't help, in fact it mixes two races.
+
+```{r}
+plot(pco$points[,1], pco$points[,3], xlab="", ylab="", col=c(rep("tan4", 342), rep("bisque", 361), rep("yellow", 97)))
+legend(x=-0.2, y=-0.1, legend=c("Afro", "Caucasian", "Asiatic"), fill=c("tan4","bisque","yellow"), cex=0.5)
+
+sum(abs(pco$eig[c(1,3)]))/sum(abs(pco$eig))
+```
+
+## g) It has a lot of variance and 
+
+```{r}
+d2 <- as.matrix(dist(pco$points[,1:2]))
+plot(x=dist[lower.tri(dist)], y=d2[lower.tri(d2)], xlab="observed", ylab="predicted", type="p")
+abline(a=0,b=1, col=red)
+```
+
+## h) 
+
+```{r}
+set.seed(1234)
+n <- 800
+init <- scale(matrix(runif(n*2), ncol=2), scale=c(F,F))
+
+nMDS <- isoMDS(dist, k = 2, y = init)
+
+plot(nMDS$points[,1], nMDS$points[,2], xlab="", ylab="", col=c(rep("tan4", 342), rep("bisque", 361), rep("yellow", 97)))
+legend(x=-0.2, y=-0.1, legend=c("Afro", "Caucasian", "Asiatic"), fill=c("tan4","bisque","yellow"), cex=0.5)
+
+nMDS$stress
+```
 
 
