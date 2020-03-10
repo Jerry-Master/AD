@@ -1,0 +1,206 @@
+---
+title: "R Notebook"
+output:
+  pdf_document: default
+  html_notebook: default
+---
+
+```{r}
+library(car)
+library(MASS)
+library(plotrix)
+```
+
+
+# Exercise 2
+## a)
+```{r}
+ker <- read.table("http://www-eio.upc.es/~jan/Data/MVA/kernels.dat", header=T)
+head(ker)
+```
+
+## b) Perimeter and area are the most correlated.
+```{r}
+scatterplotMatrix(ker)
+cor(ker)
+```
+
+## c) Seems that 2 components are enough.
+```{r}
+ker2 <- scale(ker)
+acp <- princomp(ker2)
+summary(acp)
+screeplot(acp)
+```
+
+## d) The second component is principally afected by the compactness. While the first one is almost a mean, except for compactness. It can be seen as the second component almost being compactness and the first the rest.
+```{r}
+biplot(acp, cex=0.5)
+```
+
+## e) Length and groove, it isn't the same as the one given by the correlation matrix
+
+## f) It is greater in all components
+```{r}
+apply(acp$scores, 2, sd)
+acp$sdev
+```
+
+## g) It gives the projection matrix.
+```{r}
+acp$loadings
+```
+
+## h) It gives more or less the same result, except for the arrows which aren't plotted.
+```{r}
+plot(acp$scores[,1], acp$scores[,2], xlab="First component", ylab="Second component", pch=17, col="red")
+text(acp$scores[,1]+0.2, acp$scores[,2]+0.2, labels=rownames(ker))
+```
+
+
+## i) The correlation between different principal components is almost 0, as expected, i.e. the variables are independent.
+
+```{r}
+cor(as.matrix(acp$scores))
+```
+
+
+## j)
+
+```{r}
+X <- scale(ker)
+Y = svd(X)
+print(Y$d)
+```
+
+## k)
+
+```{r}
+pc <- Y$u%*%diag(Y$d)
+head(pc)
+```
+
+
+## l)
+
+```{r}
+plot(pc[,1:2], xlab="", ylab="")
+arrows(x0=rep(0,7),y0=rep(0,7),x1=t(Y$v[1,1:7]),y1=t(Y$v[2,1:7]), length = 0.1, col="red")
+draw.circle(0,0,radius=1)
+```
+
+## m) The variable number 6 which corresponds with asymmetry. The reason is that this variable is represented almost totally by the third component.
+
+```{r}
+which.min((abs(Y$v[,1])+abs(Y$v[,2]))/sum(abs(Y$v[,1:7])))
+```
+
+## n) It is the sum of the singular values.
+
+```{r}
+sum(Y$d)
+```
+
+## o)
+
+```{r}
+sum(Y$d[1:3])/sum(Y$d) * 100
+```
+
+## p) Basically represents the asymmetry variable. It is 99.6% asymmetry and very little the others variables.
+
+```{r}
+Y$v
+```
+
+# 4
+## a)
+
+```{r}
+dist <- as.matrix(read.table("http://www-eio.upc.es/~jan/data/MVA/GeneticDist.txt"))
+dist[1:6,1:6]
+
+raza <- as.factor(c(rep("Afro", 342), rep("Caucasico", 361), rep("Asiatico", 97)))
+head(raza)
+```
+
+## b)
+
+```{r}
+pco <- cmdscale(dist, k = 3, eig=T)
+plot(pco$points[,1], pco$points[,2], xlab="", ylab="", col=c(rep("tan4", 342), rep("bisque", 361), rep("yellow", 97)))
+legend(x=-0.2, y=-0.1, legend=c("Afro", "Caucasian", "Asiatic"), fill=c("tan4","bisque","yellow"), cex=0.5)
+```
+
+## c) Yes, if k is equal to the number of genetics variables. Or k = 799 too. Because we need as many dimensions as the data has to represent it. However if the points are classified in a very high dimension but we only have a few points, they can only represent as many independent directions as the number of points minus one.
+
+## d) Yes, because the distance matrix is centered to compute the MDS. In this case there is only one as there are no other linear relations among the points.
+
+```{r}
+sum(abs(pco$eig)<1E-13)
+```
+
+## e) It explains only 4% of the variability of the data but since it is genetic data it is quite good.
+
+```{r}
+sum(abs(pco$eig[1:2]))/sum(abs(pco$eig))
+```
+
+## f) It doesn't help, in fact it mixes two races and has a smaller goodness of fit.
+
+```{r}
+plot(pco$points[,1], pco$points[,3], xlab="", ylab="", col=c(rep("tan4", 342), rep("bisque", 361), rep("yellow", 97)))
+legend(x=-0.2, y=-0.1, legend=c("Afro", "Caucasian", "Asiatic"), fill=c("tan4","bisque","yellow"), cex=0.5)
+
+sum(abs(pco$eig[c(1,3)]))/sum(abs(pco$eig))
+```
+
+## g) It has a lot of variance and it doesn't fit the line y=x. They have a much smaller predicted distance than the observed one in general.
+
+```{r}
+d2 <- as.matrix(dist(pco$points[,1:2]))
+plot(x=dist[lower.tri(dist)], y=d2[lower.tri(d2)], xlab="observed", ylab="predicted", type="p", xlim=c(0,1), ylim=c(0,1))
+abline(a=0,b=1, col="red")
+```
+
+## h) The stress is 42.01934 and the three groups are totally mixed.
+
+```{r}
+set.seed(1234)
+n <- 800
+init <- scale(matrix(runif(n*2), ncol=2), scale=F)
+
+nMDS <- isoMDS(dist, k = 2, y = init)
+
+plot(nMDS$points[,1], nMDS$points[,2], xlab="", ylab="", col=c(rep("tan4", 342), rep("bisque", 361), rep("yellow", 97)))
+legend(x=-0.2, y=-0.1, legend=c("Afro", "Caucasian", "Asiatic"), fill=c("tan4","bisque","yellow"), cex=0.5)
+
+nMDS$stress
+```
+
+## i) The stress has decreased and the groups are now distinguishable
+
+```{r}
+nMDS <- isoMDS(dist, k = 2)
+
+plot(nMDS$points[,1], nMDS$points[,2], xlab="", ylab="", col=c(rep("tan4", 342), rep("bisque", 361), rep("yellow", 97)))
+legend(x=-0.2, y=-0.1, legend=c("Afro", "Caucasian", "Asiatic"), fill=c("tan4","bisque","yellow"), cex=0.5)
+
+min_stress <- nMDS$stress
+```
+
+## j) There wasn't any random configuration that improved the stress of i).
+
+```{r}
+for (i in 1:100) {
+  print(i)
+  
+  init <- scale(matrix(runif(n*2), ncol=2), scale=F)
+  nMDS <- isoMDS(dist, k = 2, y = init)
+  if (nMDS$stress < min_stress) {
+    plot(nMDS$points[,1], nMDS$points[,2], xlab="", ylab="", col=c(rep("tan4", 342), rep("bisque", 361), rep("yellow", 97)), title=paste("Stress", nMDS$stress))
+    legend(x=-0.2, y=-0.1, legend=c("Afro", "Caucasian", "Asiatic"), fill=c("tan4","bisque","yellow"), cex=0.5)
+  }
+}
+```
+
