@@ -1,0 +1,154 @@
+---
+title: "Lab 3: Analisi de Correspondencies i Normal multivariant"
+author: "Álvaro Ribot"
+output: html_notebook
+---
+
+
+## Exercici 1: Anticonceptius a indonesia
+
+```{r}
+library("FactoMineR")
+library("ca")
+library("MASS")
+```
+
+
+### a)
+```{r}
+X <- read.table("http://www-eio.upc.es/~jan/Data/MVA/cmc.dat", header = T, sep = ",")
+head(X)
+for (i in 1:ncol(X)) {
+  print(range(X[,i]))
+}
+```
+Podem observar que el rang dels valors que prenen les variables categoriques coinicideix amb el de la seva codificacio. Per tant, podem concloure que no hi ha dades mancants.
+
+
+### b)
+
+```{r}
+X$Method <- factor(X$Method, levels = c(1, 2, 3), labels = c("none", "long-term", "mid-term"))
+X$WifeEduc <- factor(X$WifeEduc, levels = c(1, 2, 3, 4), labels = c("low", "prim", "mid", "high"))
+```
+
+### c)
+
+```{r}
+(taula <- table(X$Method, X$WifeEduc))
+```
+
+
+### d)
+
+```{r}
+chisq.test(taula)
+```
+L'estadistic de prova pren valor $140.46$ i el p-valor es mes petit que $2.2e-16$. Per tant, podem concluir que hi ha associacio entre les variables (rebutgem la hipotessi nul·la que assumeix independència)
+
+
+### e)
+
+```{r}
+out <- ca(taula)
+(r <- out$rowmass)
+(c <- out$colmass)
+```
+Podem veure els pesos de *Method* i de *WifeEduc*, respectivament. Per tant, el métode conceptiu més utilitzat es "none".
+
+
+### f)
+Es mostren les matrius de perfils fila i columna, respectivament.
+
+```{r}
+P <- as.matrix(taula)
+P <- P/sum(P) # matriu de probabilitats
+(R <- diag(1/r)%*%P)
+(C <- diag(1/c)%*%t(P))
+```
+
+### g) **Mirar que es perfil marginal**
+
+### h) 
+
+```{r}
+resultats <- ca(taula)
+summary(resultats)
+```
+Existeixen dues dimensions, però observem que amb una dimensió ja obtenim el $95.2\%$. Per tant, podem representar adequadament la taula de contingencia amb una dimensio.
+
+
+### i)
+
+```{r}
+plot(resultats, map = "rowprincipal")
+```
+
+
+### j)
+
+### k)
+
+```{r}
+X$Age <- as.factor(cut(X$Age, breaks = 4))
+table(X$Age)
+```
+
+### l)
+
+```{r}
+X$AgeRel <- with(X, interaction(Age, Rel))
+table(X$AgeRel)/nrow(X)
+```
+
+### m)
+
+```{r}
+(taula2 <- table(X$Method, X$AgeRel))
+```
+
+### n)
+
+```{r}
+summary(resultats2 <- ca(taula2))
+plot(resultats2, map = "rowgreen")
+```
+
+En aquest cas observem que son necessaries dues dimensions per fer una bona representació de la taula de contingencia, ja que amb una dimensio nomes representariem be un $62.9\%$.
+
+En general, les dones que practiquen la religio islamica tendeixen a utilitzar menys metodes anticonceptius que les no creients.
+Tambe podem notar que les dones joves tendeixen a utilitzar metodes anticonceptius de curt termini i a mesura que es fan gran utilitzen els de llarg termini.
+
+### o)
+
+```{r}
+tmult <- table(X$Method, X$WifeEduc, X$AgeRel)
+summary(acmult <- mjca(tmult, lambda = "indicator"))
+```
+
+L'anàlisi té $12$ dimensions, i la inercia de la matriu d'indicadors es $4$. En dues dimensions la bondat de l'ajust és del $23.7\%$.
+
+### p) **falta interpretar**
+
+```{r}
+plot(acmult)
+```
+
+
+### q)
+
+```{r}
+plot(acmult)
+points(acmult$rowpcoord)
+```
+
+
+### r)
+
+```{r}
+summary(B <- mjca(tmult, lambda = "Burt"))
+plot(B)
+```
+
+S'assembla molt a l'analisi utilitzant la matriu d'indicadors. El plot sembla el mateix pero escalat. Tot i amb això, amb dues dimension s'obté una bondat d'ajust del $32.0\%$, mentre que amb la matriu d'indicadors aconseguiem un $23.7\%$. Podem veure també aquesta diferència comparant els screeplots dels summaries dels dos anàlisis.
+
