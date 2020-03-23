@@ -1,0 +1,169 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+## 1.
+### a)
+```{r}
+detach(dd)
+dd <- read.table("http://www-eio.upc.es/%7Ejan/Data/MVA/cmc.dat", header = T, sep=',')
+attach(dd)
+head(dd)
+```
+
+```{r}
+summary(dd)
+
+Age < 5 || Age > 70
+WifeEduc!=1 && WifeEduc!=2 && WifeEduc!=3 && WifeEduc!=4
+HusbEduc!=1 && HusbEduc!=2 && HusbEduc!=3 && HusbEduc!=4
+sum(Childs>4)
+sum(Childs==16)
+Rel!=0 && Rel!=1
+Work!=0 && Work!=1
+Occup!=1 && Occup!=2 && Occup!=3 && Occup!=4
+Standard!=1 && Standard!=2 && Standard!=3 && Standard!=4
+Media!=0 && Media!=1
+Method!=1 && Method!=2 && Method!=3
+dd[is.na(dd)]
+```
+
+A priori no parece haber datos incompletos, pero llama la atención que haya una mujer que haya tenido 16 hijos y 368 con más de 4.
+
+### b)
+```{r}
+dd$Method[Method==1] <- "3none"
+dd$Method[Method==2] <- "1long-term"
+dd$Method[Method==3] <- "2short-term"
+dd$Method <- as.factor(dd$Method)
+
+dd$WifeEduc[WifeEduc==1] <- "4low"
+dd$WifeEduc[WifeEduc==2] <- "3medium-low"
+dd$WifeEduc[WifeEduc==3] <- "2medium-high"
+dd$WifeEduc[WifeEduc==4] <- "1high"
+dd$WifeEduc <- as.factor(dd$WifeEduc)
+
+detach(dd)
+attach(dd)
+```
+
+### c)
+```{r}
+(cont <- table(Method, WifeEduc))
+```
+
+### d)
+```{r}
+chi.test <- chisq.test(Method, WifeEduc)
+chi.test$statistic
+chi.test$p.value
+```
+
+Con un p-valor tan bajo rechazamos la hipótesis nula, es decir, existe algún tipo de correlación entre ambas variables.
+
+### e)
+```{r}
+# Columna
+(c <- apply(cont, 2, sum))
+# Fila
+(r <- apply(cont, 1, sum))
+```
+
+El método más utilizado es ningún método.
+
+### f)
+```{r}
+Dr <- diag(r)
+Dc <- diag(c)
+
+(R <- solve(Dr)%*%cont)
+(C <- t(solve(Dc)%*%t(cont)))
+```
+
+### g) No sé.
+
+### h) 
+```{r}
+library(ca)
+resultats <- ca(cont)
+summary(resultats)
+```
+
+En la solución aparecen solo dos dimensiones. La tabla se puede representar de manera exacta con $min(I-1, J-1)$ dimensiones, que en este caso son dos porque hay tres filas y cuatro columnas.
+
+### i)
+```{r}
+plot(resultats, map="rowprincipal")
+```
+
+Observamos que el perfil de mujer con más estudios es el que más proyecta sobre métodos anticonceptivos a largo plazo. También vemos una diferencia desproporcionada entre el nivel mínimo de estudios y el resto, el cual proyecta de forma excesiva sobre no usar método alguno. Ambos resultados parecen ir a favor de la intuición.
+
+### j) No sé.
+
+### k)
+```{r}
+dd$Age <- cut(dd$Age, breaks=4)
+detach(dd)
+attach(dd)
+table(Age)
+```
+
+### l)
+```{r}
+library(tidyr)
+dd <- unite(dd, AgeRel, c(Age, Rel), remove=F)
+detach(dd)
+attach(dd)
+table(AgeRel)
+```
+
+### m)
+```{r}
+(cont2 <- table(AgeRel, Method))
+```
+
+### n)
+```{r}
+res <- ca(cont2)
+plot(res, map="rowgreen")
+```
+
+Las mujeres que usan más anticonceptivos a largo plazo son mujeres de mayor edad y de religión no islámica Las que lo usan a corto plazo, son mujeres jovenes no musulmanas y también aunque algo menos las mujeres también jóvenes y de mediana edad musulmanas. Y sorprendentemente el perfil que queda mejor representado por no usar anticonceptivos es el de mujer mayor musulmana.
+
+### o)
+```{r}
+out <- mjca(dd[,c("WifeEduc", "Method", "AgeRel")], lambda="indicator")
+summary(out)
+out$inertia.t
+```
+
+El análisis se lleva acabo con doce dimensiones, la inercia total es 4, y la bondad del ajuste en dos dimensiones es del 23.7%.
+
+### p)
+```{r}
+plot(out, main="MCA biplot of Indicator matrix")
+```
+
+Aquí podemos ver que mujeres con poca educación suelen ser mayores y musulmanas, y que a su vez son las que más tienden a no usar anticonceptivos. Por otro lado, también se ven dos cúmulos de puntos que vienen a decir que el nivel de educación alto, el usar métodos a largo plazo, y el no ser musulmana ni jóven está correlacionado. Mientras que ser joven o musulmana pero no mayor, tener educación media y usar métodos a corto plazo también está correlacionado.
+
+### q)
+```{r}
+plot(out, main="MCA biplot of Indicator matrix with data")
+points(out$rowpcoord[,1], out$rowpcoord[,2])
+```
+
+Están representadas pero parcialmente ya que hay muchos puntos superpuestos, en el gráfico no se observan 1473 puntos ni mucho menos sin embargo sí que hay 1473 puntos como se observa aquí
+```{r}
+dim(out$rowpcoord)
+```
+
+### r)
+```{r}
+out2 <- mjca(dd[,c("WifeEduc", "Method", "AgeRel")], lambda="Burt")
+summary(out2)
+plot(out2, main="MCA biplot of Burt matrix with data")
+points(out2$rowpcoord[,1], out$rowpcoord[,2])
+```
+
+Hay pequeñas diferencias en las inercias generalmente del orden de $10^{-3}$ o $10^{-2}$, aunque al final la diferencia total es $2.6$. Y en cuanto al biplot se ve parecido solo que hay más puntos desplazados hacia la izquierda, pero las posiciones de los perfiles se ven sobre el mismo sitio.
