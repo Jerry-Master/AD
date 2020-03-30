@@ -152,3 +152,149 @@ plot(B)
 
 S'assembla molt a l'analisi utilitzant la matriu d'indicadors. El plot sembla el mateix pero escalat. Tot i amb això, amb dues dimension s'obté una bondat d'ajust del $32.0\%$, mentre que amb la matriu d'indicadors aconseguiem un $23.7\%$. Podem veure també aquesta diferència comparant els screeplots dels summaries dels dos anàlisis.
 
+
+# Exercici 2: Distribució de característiques esquelètiques
+
+```{r}
+library("ellipse")
+library("ICSNP")
+```
+
+
+### a)
+
+```{r}
+dd <- read.table("http://www-eio.upc.es/~jan/Data/MVA/body.dat")[,c(1:9, 25)]
+names(dd) <- c("Biacromial", "Biilical", "Bitrochanteric", "Chest_depth", "Chest_diam", "Elbow", "Wrist", "Knee", "Ankle", "Gender")
+dd$Gender <- factor(dd$Gender, levels = c(0, 1), labels = c("female", "male"))
+```
+
+### b)
+
+```{r}
+WK <- data.frame(dd$Wrist, dd$Knee)
+plot(WK, pch = 3)
+Z <- ellipse(cov(WK), level = 0.95, centre = colMeans(WK))
+points(Z, type = "l", col = "red")
+```
+
+### c) Mirant la grafica podem observar que hi ha 19 punts fora de l'elipse, y el nombre que esperariem es 25.
+
+```{r}
+print(exp <- nrow(dd)*5/100)
+```
+
+### d)
+
+### e)
+
+```{r}
+df <- dd[dd$Gender == "female",1:9]
+```
+
+### f)
+```{r}
+pairs(df, pch = 20)
+```
+
+### g)
+
+```{r}
+chisq_plot <- function(X){
+  M <- as.matrix(scale(X, center = T, scale = F))
+  S <- solve(cov(X))
+  v <- c()
+  for (i in 1:nrow(M)) {
+    aux <- t(M[i,])%*%S%*%M[i,]
+    v <- c(v, aux)
+  }
+  sort(v)
+}
+(chp <- chisq_plot(df))
+```
+
+### h) Cal aplicar 9 graus de llibertat, que es el nombre de variables que tenim.
+
+```{r}
+rang <- c()
+n <- length(chp)
+for (i in 1:n){
+  rang <- c(rang, (i-1/2)/n)
+}
+(q <- qchisq(rang, 9))
+```
+
+
+### i) Sembla que al principi segueixen molt la tendencia de ser normal bivariant pero al final podem observar outliers que tenen una distancia molt mes gran a l'esperada.
+
+```{r}
+plot(q, chp)
+abline(0,1, col = "red")
+```
+
+### j) Podem observar que es creible la normalitat marginal de les variables.
+
+```{r}
+par(mfrow = c(3, 3))
+for (i in 1:9) {
+  qqnorm(df[,i])
+}
+```
+
+### k) Obtenim resultats similars als anteriors
+
+```{r}
+dh <- dd[dd$Gender == "male",1:9]
+par(mfrow=c(3,3))
+for (i in 1:9){
+  qqnorm(dh[,i])
+}
+```
+
+### l) Existeixen diferencies significatives
+
+```{r}
+HotellingsT2(df, dh, test = "f")
+```
+Obtenim un estadístic $T^2 = 175.74$, i un p-valor més petit que $2.2\mathrm{e}-16$.
+
+### m) No es rellevant com podem veure a continuacio
+
+```{r}
+HotellingsT2(df, dh, test = "chi")
+```
+
+
+### n)
+
+```{r}
+t.test(df$Biacromial, dh$Biacromial, conf.level = 0.999)
+t.test(df$Biilical, dh$Biilical, conf.level = 0.999)
+t.test(df$Bitrochanteric, dh$Bitrochanteric, conf.level = 0.999)
+t.test(df$Chest_depth, dh$Chest_depth, conf.level = 0.999)
+t.test(df$Chest_diam, dh$Chest_diam, conf.level = 0.999)
+t.test(df$Elbow, dh$Elbow, conf.level = 0.999)
+t.test(df$Wrist, dh$Wrist, conf.level = 0.999)
+t.test(df$Knee, dh$Knee, conf.level = 0.999)
+t.test(df$Ankle, dh$Ankle, conf.level = 0.999)
+```
+
+Si prenem $\alpha = 0.001$ trobem diferencies significatives en totes les variables execpte en el diàmetre biilical
+
+### o)
+
+```{r}
+par(mfrow=c(3,3))
+boxplot(dd$Biacromial~dd$Gender)
+boxplot(dd$Biilical~dd$Gender)
+boxplot(dd$Bitrochanteric~dd$Gender)
+boxplot(dd$Chest_depth~dd$Gender)
+boxplot(dd$Chest_diam~dd$Gender)
+boxplot(dd$Elbow~dd$Gender)
+boxplot(dd$Wrist~dd$Gender)
+boxplot(dd$Knee~dd$Gender)
+boxplot(dd$Ankle~dd$Gender)
+```
+
+Observem que en general, els homes tenen mides mes grans en les diferents parts del cos (excepte pel diàmtre biilical). Una caracterísitca potser també interessant és que s'observen més outliers en els boxplots de les dones que no pas en els dels homes.
+
