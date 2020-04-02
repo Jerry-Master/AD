@@ -6,7 +6,6 @@ output: html_notebook
 ## 1.
 ### a)
 ```{r}
-detach(dd)
 dd <- read.table("http://www-eio.upc.es/%7Ejan/Data/MVA/cmc.dat", header = T, sep=',')
 attach(dd)
 head(dd)
@@ -164,6 +163,169 @@ out2 <- mjca(dd[,c("WifeEduc", "Method", "AgeRel")], lambda="Burt")
 summary(out2)
 plot(out2, main="MCA biplot of Burt matrix with data")
 points(out2$rowpcoord[,1], out$rowpcoord[,2])
+detach(dd)
 ```
 
 Hay pequeñas diferencias en las inercias generalmente del orden de $10^{-3}$ o $10^{-2}$, aunque al final la diferencia total es $2.6$. Y en cuanto al biplot se ve parecido solo que hay más puntos desplazados hacia la izquierda, pero las posiciones de los perfiles se ven sobre el mismo sitio.
+
+# 2 Características esqueléticas de hombres y mujeres
+### a) 
+```{r}
+esq <- read.table("http://www-eio.upc.es/%7Ejan/Data/MVA/body.dat")
+esq <- esq[,c(1:9,25)]
+colnames(esq) <- c("Biacromial.diam", "Biiliac.diam", "Bitrochanteric.diam", "Chest.depth", "Chest.diam", "Elbow.diam", "Wrist.diam", "Knee.diam", "Ankle.diam", "Gender")
+esq$Gender <- as.factor(esq$Gender)
+head(esq)
+attach(esq)
+```
+
+### b)
+```{r}
+plot(Wrist.diam, Knee.diam, main="Wrist vs Knee diameter", pch=16, cex=0.5)
+mean.WK <- c(mean(Wrist.diam), mean(Knee.diam))
+WK <- data.frame(Wrist.diam, Knee.diam)
+cov.WK <- cov(WK)
+library(ellipse)
+contour.WK <- ellipse(cov.WK, centre=mean.WK)
+lines(contour.WK[,1], contour.WK[,2], col = "red")
+```
+
+### c) Caen 19 fuera. Esperaríamos que cayeran fuera alrededor del 5% de los puntos, es decir 25 puntos.
+
+### d) Si la función de densidad de un punto da un valor menor que el valor que dan los puntos del contorno, entonces está fuera de elipse. Aunque también se puede calcular geométricamente sabiendo los ejes de la elipse y su centro.
+```{r}
+# Método 1 (Geométrico)
+plot(Wrist.diam, Knee.diam, main="Wrist vs Knee diameter", pch=16, cex=0.5)
+lines(contour.WK[,1], contour.WK[,2], col = "red")
+library(SIBER)
+Z <- pointsToEllipsoid(WK, cov.WK, mean.WK)
+inside <- ellipseInOut(Z)
+points(WK[inside,], pch=16, col="green", cex=0.5)
+```
+
+```{r}
+# Método 2 (Estadístico)
+library(mvtnorm)
+limit <- dmvnorm(contour.WK[1,], mean=mean.WK, sigma=cov.WK)
+outside <- dmvnorm(WK, mean=mean.WK, sigma=cov.WK) < limit
+plot(Wrist.diam, Knee.diam, main="Wrist vs Knee diameter", pch=16, cex=0.5)
+lines(contour.WK[,1], contour.WK[,2], col = "red")
+points(WK[outside,], pch=16, col="deeppink", cex=0.7)
+```
+
+### e)
+```{r}
+detach(esq)
+library(dplyr)
+esq.f <- filter(esq, Gender==0)
+esq.f <- esq.f[,-10]
+```
+
+### f) Se espera que se agrupen los puntos en elipses. A grandes rasgos todas las parejas parecen tener la forma deseada. Eso si no consideramos la variable gender que es un factor.
+```{r}
+pairs(esq.f)
+```
+
+### g)
+```{r}
+esq.f.centre <- as.matrix(scale(esq.f, scale=F))
+esq.f.cov <- as.matrix(cov(esq.f))
+esq.f.cov.inv <- solve(esq.f.cov)
+esq.f.dist.sq <- diag((esq.f.centre) %*% esq.f.cov.inv %*% t(esq.f.centre))
+(esq.f.dist.sq.ord <- sort(esq.f.dist.sq))
+```
+ 
+### h) Tantos grados de libertad como el número de variables.
+```{r}
+n <- length(esq.f.dist.sq.ord)
+p <- dim(esq)[2]-1
+rang <- ((1:n)-0.5)/n
+(quantils <- qchisq(rang, df=p))
+```
+
+### i) Los datos se ajustan bien a la recta salvo por algunos outliers que están a una distancia excesiva en comparación al resto.
+```{r}
+plot(quantils, esq.f.dist.sq.ord, xlab="Theorical quantiles", ylab="Sample quantiles", main="Chi-square plot")
+abline(a=0, b=1, col="red")
+```
+
+### j) Todas se ajustan bastante bien a una recta, por lo que es factible asumir que las densidades marginales son normales.
+```{r}
+sample.quantils <- apply(esq.f, 2, sort)
+th.quantils <- qnorm(rang)
+par(mfrow=c(3,3))
+for (i in 1:9){
+  plot(th.quantils, sample.quantils[,i], xlab="Theorical quantiles", ylab="Sample quantiles", main=paste("Q-Q norm",colnames(esq.f)[i]))  
+  abline(lm(sample.quantils[,i]~th.quantils), col="red")
+}
+
+```
+
+### k) En este caso los puntos parecen seguir la recta de forma casi perfecta, por lo que es bastante probable que sigan una distribución normal multivariada.
+```{r}
+esq.m <- filter(esq, Gender==1)
+esq.m <- esq.m[,-10]
+esq.m.centre <- as.matrix(scale(esq.m, scale=F))
+esq.m.cov <- as.matrix(cov(esq.m))
+esq.m.cov.inv <- solve(esq.m.cov)
+esq.m.dist.sq <- diag((esq.m.centre) %*% esq.m.cov.inv %*% t(esq.m.centre))
+esq.m.dist.sq.ord <- sort(esq.m.dist.sq)
+
+n.m <- length(esq.m.dist.sq.ord)
+rang <- ((1:n.m)-0.5)/n.m
+(quantils.m <- qchisq(rang, df=p))
+
+plot(quantils.m, esq.m.dist.sq.ord, xlab="Theorical quantiles", ylab="Sample quantiles", main="Chi-square plot (Hombres)")
+abline(a=0, b=1, col="red")
+```
+
+### l) El estadístico vale 175.74 y el p-valor es numéricamente 0. Podemos rechazar la hipótesis nula y decir que hay diferencias significativas.
+```{r}
+library(ICSNP)
+(hot.test <- HotellingsT2(esq.f,esq.m,test="f"))
+hot.test$statistic
+hot.test$p.value
+```
+
+### m) Si asumimos que las matrices de covarianzas pueden no ser iguales sigue saliendo que son diferentes, por tanto, en este caso concreto ambos test dan el mismo resultado.
+```{r}
+m1 <- colMeans(esq.f)
+m2 <- colMeans(esq.m)
+S1 <- cov(esq.f)
+S2 <- cov(esq.m)
+n1 <- dim(esq.f)[1]
+n2 <- dim(esq.m)[1]
+(T2 <- (m1-m2)%*%solve(S1/50+S2/50)%*%(m1-m2))
+qchisq(0.95,2)
+```
+
+### n) Todas las variables son estadísticamente diferente salvo el diámetro Biiliaco.
+```{r}
+for (i in 1:9){
+  test.marginal <- t.test(esq.f[,i],esq.m[,i], var.equal=F)
+  if (test.marginal$p.value < 0.001) {
+    print(paste("Difference in", colnames(esq)[i]))
+  } else {
+    print(paste("No difference in", colnames(esq)[i]))
+  }
+}
+```
+
+### o)
+```{r}
+for (i in 1:9){
+  boxplot(esq.f[,i], esq.m[,i], names=c("Female","Male"), main=colnames(esq)[i])
+}
+
+```
+
+
+
+
+
+
+
+
+
+
+
