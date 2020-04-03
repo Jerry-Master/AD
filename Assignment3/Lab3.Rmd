@@ -1,0 +1,359 @@
+---
+title: "Lab 3: Analisi de Correspondencies i Normal multivariant"
+author: "Álvaro Ribot"
+output: html_notebook
+---
+
+
+## Exercici 1: Anticonceptius a indonesia
+
+```{r}
+library("ca")
+library("MASS")
+```
+
+
+### a)
+```{r}
+X <- read.table("http://www-eio.upc.es/~jan/Data/MVA/cmc.dat", header = T, sep = ",")
+head(X)
+for (i in 1:ncol(X)) {
+  print(range(X[,i]))
+}
+X[is.na(X)]
+```
+Podem observar que el rang dels valors que prenen les variables categoriques coinicideix amb el de la seva codificacio. Per tant, podem concloure que no hi ha dades mancants. A mes podem veure que no hi ha cap dada faltant.
+
+
+### b)
+
+```{r}
+X$Method <- factor(X$Method, levels = c(1, 2, 3), labels = c("none", "long-term", "mid-term"))
+X$WifeEduc <- factor(X$WifeEduc, levels = c(1, 2, 3, 4), labels = c("1low",  "2medium-low", "3medium-high", "4high"))
+```
+
+### c)
+
+```{r}
+(taula <- table(X$Method, X$WifeEduc))
+```
+
+
+### d)
+
+```{r}
+chi.test <- chisq.test(taula)
+chi.test$statistic
+chi.test$p.value
+```
+L'estadistic de prova pren valor $140.46$ i el p-valor es $8.01877e-28$. Per tant, podem concluir que hi ha associacio entre les variables (rebutgem la hipotessi nul·la que assumeix independència)
+
+
+### e)
+
+```{r}
+# Columna
+(c <- apply(taula, 2, sum))
+# Fila
+(r <- apply(taula, 1, sum))
+```
+Podem veure els pesos de *Method* i de *WifeEduc*, respectivament. Per tant, el métode conceptiu més utilitzat es "none".
+
+
+### f)
+Es mostren les matrius de perfils fila i columna, respectivament.
+
+```{r}
+Dr <- diag(r)
+Dc <- diag(c)
+
+(R <- solve(Dr)%*%taula)
+(C <- t(solve(Dc)%*%t(taula)))
+```
+
+### g) Es mostra el perfil marginal de la taula per perfils fila
+
+```{r}
+P <- as.matrix(taula)
+P <- P/sum(P)
+(marg.r <- apply(P, 2, sum))
+```
+
+
+### h) 
+
+```{r}
+resultats <- ca(taula)
+summary(resultats)
+```
+Existeixen dues dimensions: la taula es pot representar de manera exacta amb min(I-1, J-1), on I i J son el nombre de files i columnes, respectivament. Però observem que amb una dimensió ja obtenim el $95.2\%$. Per tant, podem representar adequadament la taula de contingencia amb una dimensio.
+
+
+### i)
+
+```{r}
+plot(resultats, map = "rowprincipal")
+```
+
+
+### j)
+
+```{r}
+dist(rbind(marg.r,P[1,]))
+dist(rbind(marg.r,P[2,]))
+dist(rbind(marg.r,P[3,]))
+```
+ Per tant, el perfil fila que s'assembla mes al perfil marginal es el corresponent a la fila 1, és a dir, a la categoria "none".
+
+
+### k)
+
+```{r}
+X$Age <- as.factor(cut(X$Age, breaks = 4))
+table(X$Age)
+```
+
+### l)
+
+```{r}
+X$AgeRel <- with(X, interaction(Age, Rel))
+table(X$AgeRel)/nrow(X)
+```
+
+### m)
+
+```{r}
+(taula2 <- table(X$Method, X$AgeRel))
+```
+
+### n)
+
+```{r}
+summary(resultats2 <- ca(taula2))
+plot(resultats2, map = "rowgreen")
+```
+
+En aquest cas observem que son necessaries dues dimensions per fer una bona representació de la taula de contingencia, ja que amb una dimensio nomes representariem be un $62.9\%$.
+En general, les dones que practiquen la religio islamica tendeixen a utilitzar menys metodes anticonceptius que les no creients.
+Tambe podem notar que les dones joves tendeixen a utilitzar metodes anticonceptius de curt termini i a mesura que es fan gran utilitzen els de llarg termini.
+
+### o)
+
+```{r}
+out <- mjca(dd[,c("WifeEduc", "Method", "AgeRel")], lambda="indicator")
+summary(out)
+out$inertia.t
+```
+
+L'anàlisi té $12$ dimensions, i la inercia de la matriu d'indicadors es $4$. En dues dimensions la bondat de l'ajust és del $23.7\%$.
+
+### p) 
+
+```{r}
+plot(out, main="MCA biplot of Indicator matrix")
+```
+
+Podem veure que les dones amb poca educació tendeixen a ser grans i musulmanes, i a més són les que més tendeixen a no usar mètodes anticonceptius. Per altra banda, també es veuen dos agrupacions de punts que diuen que el nivell d'educació alt, usar mètodes a llarg termini, i no ser musulmana ni jove està correlacionat. Però ser jove o tenir educació mitjana i usar mètodes a curt termini també està correlacionat.
+
+### q)
+
+```{r}
+plot(out, main="MCA biplot of Indicator matrix with data")
+points(out$rowpcoord[,1], out$rowpcoord[,2])
+```
+
+Estàn tots els punts representats però hi ha moltes superposicions, i per això a la gràfica no es contemplen 1473 punts.
+
+
+### r)
+
+```{r}
+out2 <- mjca(dd[,c("WifeEduc", "Method", "AgeRel")], lambda="Burt")
+summary(out2)
+plot(out2, main="MCA biplot of Burt matrix with data")
+points(out2$rowpcoord[,1], out$rowpcoord[,2])
+```
+
+S'assembla molt a l'analisi utilitzant la matriu d'indicadors. El plot sembla el mateix pero escalat, i els punts estàn una mica desplcaçats cap a l'esqerra. Hi ha diferèncie en les inèrcies del ordre de $10^{-3}$ o $10^{-2}$, tot i que al final la diferència total es de $2.6$.  Tot i amb això, amb dues dimension s'obté una bondat d'ajust del $32.0\%$, mentre que amb la matriu d'indicadors aconseguiem un $23.7\%$. Podem veure també aquesta diferència comparant els screeplots dels summaries dels dos anàlisis.
+
+
+# Exercici 2: Distribució de característiques esquelètiques
+
+```{r}
+library("ellipse")
+library("ICSNP")
+library(dplyr)
+```
+
+
+### a)
+
+```{r}
+esq <- read.table("http://www-eio.upc.es/%7Ejan/Data/MVA/body.dat")
+esq <- esq[,c(1:9,25)]
+colnames(esq) <- c("Biacromial.diam", "Biiliac.diam", "Bitrochanteric.diam", "Chest.depth", "Chest.diam", "Elbow.diam", "Wrist.diam", "Knee.diam", "Ankle.diam", "Gender")
+esq$Gender <- factor(esq$Gender, levels = c(0, 1), labels = c("female", "male"))
+head(esq)
+attach(esq)
+```
+
+### b)
+
+```{r}
+plot(Wrist.diam, Knee.diam, main="Wrist vs Knee diameter", pch=16, cex=0.5)
+mean.WK <- c(mean(Wrist.diam), mean(Knee.diam))
+WK <- data.frame(Wrist.diam, Knee.diam)
+cov.WK <- cov(WK)
+contour.WK <- ellipse(cov.WK, centre=mean.WK)
+lines(contour.WK[,1], contour.WK[,2], col = "red")
+```
+
+### c) Mirant la grafica podem observar que hi ha 19 punts fora de l'elipse, y el nombre que esperariem es 25.
+
+```{r}
+print(exp <- nrow(esq)*5/100)
+```
+
+### d)
+Si la funció de densitat de un punt dona un valor menor que el valor que donen els punts del contorn, llavors està a fora de l' elipse. Tot i que també es pot calcular geomètricament sabent els eixos de l'elipse y el seu centre.
+
+```{r}
+# Método 1 (Geométrico)
+plot(Wrist.diam, Knee.diam, main="Wrist vs Knee diameter", pch=16, cex=0.5)
+lines(contour.WK[,1], contour.WK[,2], col = "red")
+library(SIBER)
+Z <- pointsToEllipsoid(WK, cov.WK, mean.WK)
+inside <- ellipseInOut(Z)
+points(WK[inside,], pch=16, col="green", cex=0.5)
+```
+
+```{r}
+# Método 2 (Estadístico)
+library(mvtnorm)
+limit <- dmvnorm(contour.WK[1,], mean=mean.WK, sigma=cov.WK)
+outside <- dmvnorm(WK, mean=mean.WK, sigma=cov.WK) < limit
+plot(Wrist.diam, Knee.diam, main="Wrist vs Knee diameter", pch=16, cex=0.5)
+lines(contour.WK[,1], contour.WK[,2], col = "red")
+points(WK[outside,], pch=16, col="deeppink", cex=0.7)
+```
+
+
+### e)
+
+```{r}
+detach(esq)
+esq.f <- filter(esq, Gender=="female")
+esq.f <- esq.f[,-10]
+```
+
+### f)
+```{r}
+pairs(esq.f, pch = 20)
+```
+
+### g)
+
+```{r}
+chisq_plot <- function(X){
+  M <- as.matrix(scale(X, center = T, scale = F))
+  S <- solve(cov(X))
+  v <- c()
+  for (i in 1:nrow(M)) {
+    aux <- t(M[i,])%*%S%*%M[i,]
+    v <- c(v, aux)
+  }
+  sort(v)
+}
+(esq.f.dist.sq.ord <- chisq_plot(esq.f))
+```
+
+### h) Cal aplicar 9 graus de llibertat, que es el nombre de variables que tenim.
+
+```{r}
+n <- length(esq.f.dist.sq.ord)
+p <- dim(esq)[2]-1
+rang <- ((1:n)-0.5)/n
+(quantils <- qchisq(rang, df=p))
+```
+
+
+### i) Sembla que al principi segueixen molt la tendencia de ser normal bivariant pero al final podem observar outliers que tenen una distancia molt mes gran a l'esperada.
+
+```{r}
+plot(quantils, esq.f.dist.sq.ord, xlab="Theorical quantiles", ylab="Sample quantiles", main="Chi-square plot")
+abline(a=0, b=1, col="red")
+```
+
+### j) Podem observar que es creible la normalitat marginal de les variables.
+
+```{r}
+sample.quantils <- apply(esq.f, 2, sort)
+th.quantils <- qnorm(rang)
+par(mfrow=c(3,3))
+for (i in 1:9){
+  plot(th.quantils, sample.quantils[,i], xlab="Theorical quantiles", ylab="Sample quantiles", main=paste("Q-Q norm",colnames(esq.f)[i]))  
+  abline(lm(sample.quantils[,i]~th.quantils), col="red")
+}
+```
+
+### k) 
+En aquest cas els punts semblen seguir una recta quasi perfecta, per tant es bastant probalbe que segueixin una distribució normal multivariada.
+En este caso los puntos parecen seguir la recta de forma casi perfecta, por lo que es bastante probable que sigan una distribución normal multivariada.
+
+```{r}
+esq.m <- filter(esq, Gender=="male")
+esq.m <- esq.m[,-10]
+esq.m.centre <- as.matrix(scale(esq.m, scale=F))
+esq.m.cov <- as.matrix(cov(esq.m))
+esq.m.cov.inv <- solve(esq.m.cov)
+esq.m.dist.sq <- diag((esq.m.centre) %*% esq.m.cov.inv %*% t(esq.m.centre))
+esq.m.dist.sq.ord <- sort(esq.m.dist.sq)
+
+n.m <- length(esq.m.dist.sq.ord)
+rang <- ((1:n.m)-0.5)/n.m
+(quantils.m <- qchisq(rang, df=p))
+
+plot(quantils.m, esq.m.dist.sq.ord, xlab="Theorical quantiles", ylab="Sample quantiles", main="Chi-square plot (Hombres)")
+abline(a=0, b=1, col="red")
+```
+
+### l) Existeixen diferencies significatives
+
+```{r}
+HotellingsT2(esq.f, esq.m, test = "f")
+```
+Obtenim un estadístic $T^2 = 175.74$, i un p-valor més petit que $2.2\mathrm{e}-16$.
+
+### m) No es rellevant com podem veure a continuacio
+
+```{r}
+HotellingsT2(esq.f, esq.m, test = "chi")
+```
+
+
+### n)
+
+```{r}
+for (i in 1:9){
+  test.marginal <- t.test(esq.f[,i],esq.m[,i], var.equal=F)
+  if (test.marginal$p.value < 0.001) {
+    print(paste("Difference in", colnames(esq)[i]))
+  } else {
+    print(paste("No difference in", colnames(esq)[i]))
+  }
+}
+```
+
+Si prenem $\alpha = 0.001$ trobem diferencies significatives en totes les variables execpte en el diàmetre biilical
+
+### o)
+
+```{r}
+par(mfrow=c(3,3))
+for (i in 1:9){
+  boxplot(esq.f[,i], esq.m[,i], names=c("Female","Male"), main=colnames(esq)[i])
+}
+```
+
+Observem que en general, els homes tenen mides mes grans en les diferents parts del cos (excepte pel diàmtre biilical). Una caracterísitca potser també interessant és que s'observen més outliers en els boxplots de les dones que no pas en els dels homes.
+
