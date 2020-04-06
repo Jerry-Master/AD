@@ -192,7 +192,7 @@ lines(contour.WK[,1], contour.WK[,2], col = "red")
 
 ### c) Caen 19 fuera. Esperaríamos que cayeran fuera alrededor del 5% de los puntos, es decir 25 puntos.
 
-### d) Si la función de densidad de un punto da un valor menor que el valor que dan los puntos del contorno, entonces está fuera de elipse. Aunque también se puede calcular geométricamente sabiendo los ejes de la elipse y su centro.
+### d) Si la función de densidad de un punto da un valor menor que el valor que dan los puntos del contorno, entonces está fuera de la elipse. Aunque también se puede calcular geométricamente sabiendo los ejes de la elipse y su centro.
 ```{r}
 # Método 1 (Geométrico)
 plot(Wrist.diam, Knee.diam, main="Wrist vs Knee diameter", pch=16, cex=0.5)
@@ -295,7 +295,7 @@ S1 <- cov(esq.f)
 S2 <- cov(esq.m)
 n1 <- dim(esq.f)[1]
 n2 <- dim(esq.m)[1]
-(T2 <- (m1-m2)%*%solve(S1/50+S2/50)%*%(m1-m2))
+(T2 <- (m1-m2)%*%solve(S1/n1+S2/n2)%*%(m1-m2))
 qchisq(0.95,2)
 ```
 

@@ -8,7 +8,7 @@ output: html_notebook
 ## Exercici 1: Anticonceptius a indonesia
 
 ```{r}
-library("FactoMineR")
+#library("FactoMineR")
 library("ca")
 library("MASS")
 ```
@@ -68,6 +68,11 @@ P <- P/sum(P) # matriu de probabilitats
 ```
 
 ### g) **Mirar que es perfil marginal**
+```{r}
+(marg <- apply(P, 2, sum))
+dist(rbind(marg, R[3,]))
+```
+
 
 ### h) 
 
@@ -122,13 +127,16 @@ Tambe podem notar que les dones joves tendeixen a utilitzar metodes anticoncepti
 ### o)
 
 ```{r}
-tmult <- table(X$Method, X$WifeEduc, X$AgeRel)
+tmult <- table(X[,c("Method", "WifeEduc", "AgeRel")])
 summary(acmult <- mjca(tmult, lambda = "indicator"))
 ```
 
 L'anàlisi té $12$ dimensions, i la inercia de la matriu d'indicadors es $4$. En dues dimensions la bondat de l'ajust és del $23.7\%$.
 
 ### p) **falta interpretar**
+```{r}
+head(X)
+```
 
 ```{r}
 plot(acmult)
@@ -148,6 +156,7 @@ points(acmult$rowpcoord)
 ```{r}
 summary(B <- mjca(tmult, lambda = "Burt"))
 plot(B)
+points(B$rowpcoord[,1], B$rowpcoord[,2])
 ```
 
 S'assembla molt a l'analisi utilitzant la matriu d'indicadors. El plot sembla el mateix pero escalat. Tot i amb això, amb dues dimension s'obté una bondat d'ajust del $32.0\%$, mentre que amb la matriu d'indicadors aconseguiem un $23.7\%$. Podem veure també aquesta diferència comparant els screeplots dels summaries dels dos anàlisis.
@@ -173,7 +182,7 @@ dd$Gender <- factor(dd$Gender, levels = c(0, 1), labels = c("female", "male"))
 
 ```{r}
 WK <- data.frame(dd$Wrist, dd$Knee)
-plot(WK, pch = 3)
+plot(WK, pch = 3, cex = 0.5)
 Z <- ellipse(cov(WK), level = 0.95, centre = colMeans(WK))
 points(Z, type = "l", col = "red")
 ```

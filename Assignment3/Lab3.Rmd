@@ -1,7 +1,9 @@
 ---
-title: "Lab 3: Analisi de Correspondencies i Normal multivariant"
-author: "Álvaro Ribot"
-output: html_notebook
+title: 'Lab 3: Analisi de Correspondencies i Normal multivariant'
+author: "Álvaro Ribot & Jose Pérez Cano"
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 
 
@@ -140,7 +142,7 @@ Tambe podem notar que les dones joves tendeixen a utilitzar metodes anticoncepti
 ### o)
 
 ```{r}
-out <- mjca(dd[,c("WifeEduc", "Method", "AgeRel")], lambda="indicator")
+out <- mjca(X[,c("WifeEduc", "Method", "AgeRel")], lambda="indicator")
 summary(out)
 out$inertia.t
 ```
@@ -168,7 +170,7 @@ Estàn tots els punts representats però hi ha moltes superposicions, i per aix�
 ### r)
 
 ```{r}
-out2 <- mjca(dd[,c("WifeEduc", "Method", "AgeRel")], lambda="Burt")
+out2 <- mjca(X[,c("WifeEduc", "Method", "AgeRel")], lambda="Burt")
 summary(out2)
 plot(out2, main="MCA biplot of Burt matrix with data")
 points(out2$rowpcoord[,1], out$rowpcoord[,2])
