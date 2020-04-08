@@ -15,6 +15,7 @@ head(seeds)
 ```{r}
 variedad <- seeds[,8]
 seeds <- seeds[,-8]
+nums <- row.names(seeds)
 ```
 
 ### 3. Las dos únicas anomalías son que el coeficiente de asimetría tiene algunos valores muy altos y que la longitud de la ranura no tiene una distribución simétrica. Aún así, nada extremo. 
@@ -34,7 +35,8 @@ pairs(seeds)
 ### 5.
 
 ```{r}
-dist.st <- dist(scale(seeds))
+seeds <- scale(seeds)
+dist.st <- dist(seeds)
 as.matrix(dist.st)[1:5,1:5]
 ```
 
@@ -77,11 +79,11 @@ out.w <- hclust(dist.st, method = "ward.D2")
 plot(out.w)
 
 groups.3.ward <- cutree(out.w, k = 3)
-(cross.table.ward <- table(groups.3.avg, variedad))
+(cross.table.ward <- table(groups.3.ward, variedad))
 sum(diag(cross.table.ward))/sum(cross.table.ward)
 ```
 
-### 11. En primer lugar asocia el segundo grupo al tercero y el tercero al segundo. Obviando ese detalle acierta en un 89% de las veces, ligeramente peor que el método Ward pero mejor que los otros dos métodos.
+### 11. En primer lugar asocia el segundo grupo al tercero y el tercero al segundo. Obviando ese detalle acierta en un 92% de las veces, exactamente igual que con el método de Ward.
 
 ```{r}
 set.seed(123)
@@ -95,7 +97,7 @@ km$cluster[km$cluster==4] <- 3
 sum(diag(cross.table.km))/sum(cross.table.km)
 ```
 
-### 12. Según el criterio de Calinski-Harabasz la cantidad óptima de grupos es 3.
+### 12. Según el criterio de Calinski-Harabasz la cantidad óptima de grupos es 2.
 
 ```{r}
 library(clusterSim)
@@ -107,31 +109,31 @@ for (k in 2:6) {
 plot(2:6, Fs, type="l")
 ```
 
-### 13. Se equivoca en el 9,5% de los casos, mejor que el K-means pero peor que el criterio de ward.
+### 13. Se equivoca en el 10% de los casos, peor que los otros criterios.
 
 ```{r}
 library(mclust)
 model <- Mclust(seeds, G=3)
 plot(model, what="classification")
 
-model$z[model$z >= 0.5] <- 1
-model$z[model$z < 0.5] <- 0
-classif <- data.frame(rep(1, dim(model$z)[1]))
-classif[as.logical(model$z[,2]),] <- 2
-classif[as.logical(model$z[,3]),] <- 3
-(cross.table.mix <- table(classif$rep.1..dim.model.z..1.., variedad))
+(cross.table.mix <- table(model$classification, variedad))
 sum(diag(cross.table.mix))/sum(cross.table.mix)
 1-sum(diag(cross.table.mix))/sum(cross.table.mix)
 ```
+```{r}
+summary(model, parameters=T)
+model$classification
+```
 
-### 14. En total, los tres métodos clasifican mal 34 semillas diferentes entre todos.
+### 14. En total, los tres métodos clasifican mal 6 semillas simultáneamente.
 
 ```{r}
-err.ward <- row.names(seeds)[groups.3.ward != variedad]
-err.km <- row.names(seeds)[km$cluster != variedad]
-err.gauss <- row.names(seeds)[classif$rep.1..dim.model.z..1.. != variedad]
+(err.ward <- nums[groups.3.ward != variedad])
+(err.km <- nums[km$cluster != variedad])
+(err.km <- err.km[err.km %in% err.ward])
+(err.gauss <- nums[model$classification != variedad])
 
-err <- c(err.ward, err.km, err.gauss)
+(err <- err.gauss[err.gauss %in% err.km])
 (err <- sort(as.numeric(err[!duplicated(err)])))
 length(err)
 ```
@@ -153,6 +155,9 @@ text(x = sc*acp$loadings[,1], y = sc*acp$loadings[,2], label=colnames(seeds))
 
 
 
+```{r}
+biplot(acp)
+```
 
 
 
