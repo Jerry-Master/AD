@@ -1,0 +1,154 @@
+---
+title: "AD: Lab 4"
+author: "Álvaro Ribot"
+output: html_notebook
+---
+
+
+### 1)
+
+```{r}
+seeds <- read.table("http://www-eio.upc.es/%7Ejan/Data/MVA/seedsdataset.dat", col.names = c("Area", "Perimetro", "Compacidad", "Longitud", "Ancho", "Coef.asimetria", "Long.ranura", "Variedad"))
+head(seeds)
+```
+
+### 2)
+
+```{r}
+variedad <- as.factor(seeds$Variedad)
+seeds <- seeds[,-8]
+head(seeds)
+```
+
+
+### 3) No observamos ninguna anomalia extrema
+
+```{r}
+par(mfrow = c(2,4))
+for(i in 1:ncol(seeds)) {
+  boxplot(seeds[,i], xlab = names(seeds)[i])
+}
+```
+
+
+### 4) Podemos observar que hay pares de variables con correlacion muy alta (por ejemplo, Area y Perimetro)
+
+```{r}
+pairs(seeds)
+```
+
+
+### 5)
+
+
+```{r}
+Dist <- dist(scale(seeds), diag = T, upper = T)
+as.matrix(Dist)[1:5, 1:5]
+```
+
+
+### 6) Teniendo en cuenta que hay tres variedades de semilla, este dendograma nos muestra que el agrupamiento jerarquico de "nearest neighbour" no separa bien los tres grupos. 
+
+```{r}
+nearest_neighbour <- hclust(Dist, method = "single")
+plot(nearest_neighbour)
+```
+
+### 7) Con este método obtenemos mejores separaciones
+
+```{r}
+farthest_neighbour <- hclust(Dist, method = "complete")
+plot(farthest_neighbour)
+```
+
+### 8) La distancia aproximada deberia ser $5.7$. El análisis ha identificado bastante bien a las variedades. De hecho, un $88\%$ de las semillas se identificarían correctamente si suponemos que los clusters coinciden con las variables.
+
+```{r}
+clusters <- cutree(farthest_neighbour, k = 3)
+table(variedad, clusters)
+```
+
+```{r}
+(48+66+70)/210
+```
+
+
+### 9) Observamos que el "average linkage" separa muy bien las semillas de las variedad 2 de las semillas de las variedades 1 y 3.
+
+```{r}
+avg_link <- hclust(Dist, method = "average")
+plot(avg_link)
+clusters2 <- cutree(avg_link, k = 2)
+table(variedad, clusters2)
+```
+
+### 10) Se clasifican correctamente un $93\%$ de las semillas
+
+```{r}
+ward <- hclust(Dist, method = "ward.D2")
+plot(ward)
+clusters3 <- cutree(ward, k = 3)
+table(variedad, clusters3)
+```
+
+```{r}
+(64 + 65 + 66)/210
+```
+
+
+
+### 11) kmeans no funciona mejor que ward porque clasifica correctamente un $89\%$ de las semillas.
+
+```{r}
+set.seed(123)
+out_km <- kmeans(seeds, 3)
+table(variedad, out_km$cluster)
+```
+```{r}
+(60+60+68)/210
+```
+
+
+### 12) Podemos observar que el número de clusters más adecuado es 3.
+
+```{r}
+library(clusterSim)
+F_stat <- c()
+for (i in 2:6) {
+  aux1 <- kmeans(seeds, i)
+  aux2 <- index.G1(seeds, cl = aux1$cluster)
+  F_stat <- c(F_stat, aux2)
+}
+plot(x = c(2:6), y = F_stat, ty = "l")
+```
+
+### 13) Un $7.6\%$ de las semillas estan mal clasificadas.
+
+```{r}
+library(mclust)
+model <- Mclust(seeds, G = 3)
+plot(model, what = "classification")
+table(variedad, model$classification)
+```
+
+```{r}
+1 - (64+60+70)/210
+```
+
+
+### 14) ????
+
+```{r}
+(lista <- seeds[variedad != clusters3 && variedad != out_km$cluster && variedad != model$classification,])
+```
+
+### 15)
+
+```{r}
+seeds2 <- scale(seeds)
+summary(acp <- princomp(seeds2))
+biplot(acp, cex = 0.5)
+```
+
+
+
