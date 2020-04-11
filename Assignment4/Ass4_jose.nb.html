@@ -2008,12 +2008,13 @@ model &lt;- Mclust(seeds, G=3)</code></pre>
 <h3>14. En total, los tres métodos clasifican mal 6 semillas simultáneamente.</h3>
 <!-- rnb-text-end -->
 <!-- rnb-chunk-begin -->
-<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuKGVyci53YXJkIDwtIG51bXNbZ3JvdXBzLjMud2FyZCAhPSB2YXJpZWRhZF0pXG5cbmBgYCJ9 -->
-<pre class="r"><code>(err.ward &lt;- nums[groups.3.ward != variedad])
+<!-- rnb-source-begin eyJkYXRhIjoiYGBgclxuKGVyci5nYXVzcyA8LSBudW1zW21vZGVsJGNsYXNzaWZpY2F0aW9uICE9IHZhcmllZGFkXSlcblxuYGBgIn0= -->
+<pre class="r"><code>(err.gauss &lt;- nums[model$classification != variedad])
 </code></pre>
 <!-- rnb-source-end -->
-<!-- rnb-output-begin eyJkYXRhIjoiIFsxXSBcIjEwXCIgIFwiMjBcIiAgXCIzNlwiICBcIjM4XCIgIFwiNDRcIiAgXCI3MFwiICBcIjEyNVwiIFwiMTM2XCIgXCIxMzhcIiBcIjEzOVwiIFwiMTQ3XCIgXCIxNjZcIiBcIjE4MFwiIFwiMjAwXCIgXCIyMDJcIlxuIn0= -->
-<pre><code> [1] &quot;10&quot;  &quot;20&quot;  &quot;36&quot;  &quot;38&quot;  &quot;44&quot;  &quot;70&quot;  &quot;125&quot; &quot;136&quot; &quot;138&quot; &quot;139&quot; &quot;147&quot; &quot;166&quot; &quot;180&quot; &quot;200&quot; &quot;202&quot;</code></pre>
+<!-- rnb-output-begin eyJkYXRhIjoiIFsxXSBcIjlcIiAgIFwiMTBcIiAgXCIyNFwiICBcIjM2XCIgIFwiMzhcIiAgXCI2MVwiICBcIjYyXCIgIFwiNzBcIiAgXCIxMzNcIiBcIjEzNVwiIFwiMTM2XCIgXCIxMzhcIiBcIjEzOVwiIFwiMTQyXCIgXCIxNDNcIiBcIjE5NlwiXG5bMTddIFwiMTk3XCIgXCIxOThcIiBcIjIwMFwiIFwiMjAyXCIgXCIyMDRcIiBcIjIwOFwiXG4ifQ== -->
+<pre><code> [1] &quot;9&quot;   &quot;10&quot;  &quot;24&quot;  &quot;36&quot;  &quot;38&quot;  &quot;61&quot;  &quot;62&quot;  &quot;70&quot;  &quot;133&quot; &quot;135&quot; &quot;136&quot; &quot;138&quot; &quot;139&quot; &quot;142&quot; &quot;143&quot; &quot;196&quot;
+[17] &quot;197&quot; &quot;198&quot; &quot;200&quot; &quot;202&quot; &quot;204&quot; &quot;208&quot;</code></pre>
 <!-- rnb-output-end -->
 <!-- rnb-chunk-end -->
 <!-- rnb-text-begin -->

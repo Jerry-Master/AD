@@ -1,0 +1,182 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+### 1.
+
+```{r}
+seeds <- read.table("http://www-eio.upc.es/%7Ejan/Data/MVA/seedsdataset.dat", col.names = c("Area", "Perimeter", "Compacidad", "longitud", "ancho", "coef.asimetria", "long.ranura", "variedad"))
+head(seeds)
+```
+
+### 2.
+
+```{r}
+variedad <- seeds[,8]
+seeds <- seeds[,-8]
+nums <- row.names(seeds)
+```
+
+### 3. No se observan grandes anomalías pero sí se observa que hay distribuciones no simétricas como la longitud de ranura y algunos outliers en el coeficiente de asimetría.
+
+```{r}
+par(mfrow = c(2,4))
+for(i in 1:ncol(seeds)) {
+  boxplot(seeds[,i], xlab = names(seeds)[i])
+}
+```
+
+### 4. Al haber relaciones no lineales entre las variables salen formas diversas. El coeficiente de asimetría parece no tener correlación con ninguna variable. Y en algunos plots parecen diferenciarse al menos dos grupos. Por lo demás no parece que haya anomalías destacables. Además, podemos observar que hay pares de variables con correlacion muy alta (por ejemplo, Área y Perímetro).
+
+```{r}
+pairs(seeds)
+```
+
+### 5.
+
+```{r}
+non.scaled.seeds <- seeds
+seeds <- scale(seeds)
+dist.st <- dist(seeds)
+as.matrix(dist.st)[1:5,1:5]
+```
+
+### 6. Si a partir de este dendograma tuvieramos que decir que hay tres variedades concluiriamos que dos de ellas solo aparecen en tres semillas y la otra tiene el resto de semillas. Este dendograma no separa demasiado y junta muchas semillas en un mismo grupo, por lo que no queda nada claro que haya tres variedades a partir de este dendograma.
+
+```{r}
+nearest_neighbour <- hclust(Dist, method = "single")
+plot(nearest_neighbour)
+```
+
+### 7. Con este método obtenemos mejores separaciones y se ve que está más balanceado el reparto de las semillas por grupo. También vemos que los grandes grupos se juntan más arriba.
+
+```{r}
+farthest_neighbour <- hclust(Dist, method = "complete")
+plot(farthest_neighbour)
+```
+
+### 8. La distancia aproximada deberia ser $5.7$. El análisis ha identificado bastante bien a las variedades. De hecho, un $88\%$ de las semillas se identificarían correctamente si suponemos que los clusters coinciden con las variables.
+
+```{r}
+clusters <- cutree(farthest_neighbour, h = 5.7)
+(cross.table <- table(variedad, clusters))
+sum(diag(cross.table))/sum(cross.table)
+```
+
+### 9. Se observa que la variedad "Kama" y "Canadian" se agrupan en un cluster y la variedad "Rosa" en otro con tan solo 7 semillas de "Kama" en el cluster 2 y 2 de "Rosa" en el cluster 1. Observamos pues que el "average linkage" separa muy bien las semillas de las variedad 2 de las semillas de las variedades 1 y 3.
+
+```{r}
+avg_link <- hclust(Dist, method = "average")
+plot(avg_link)
+clusters2 <- cutree(avg_link, k = 2)
+table(variedad, clusters2)
+```
+
+### 10. Se clasifican correctamente un $93\%$ de las semillas
+
+```{r}
+out.w <- hclust(dist.st, method = "ward.D2")
+plot(out.w)
+
+groups.3.ward <- cutree(out.w, k = 3)
+(cross.table.ward <- table(groups.3.ward, variedad))
+sum(diag(cross.table.ward))/sum(cross.table.ward)
+```
+
+### 11. En primer lugar asocia el segundo grupo al tercero y el tercero al segundo, es decir, cambiando las etiquetas pero separandolos igual. Obviando ese detalle acierta en un $93\%$ de las veces, exactamente igual que con el método de Ward.
+
+```{r}
+set.seed(123)
+(km <- kmeans(seeds, 3))
+
+km$cluster[km$cluster==2] <- 4
+km$cluster[km$cluster==3] <- 2
+km$cluster[km$cluster==4] <- 3
+
+(cross.table.km <- table(km$cluster, variedad))
+sum(diag(cross.table.km))/sum(cross.table.km)
+```
+
+### 12. Según el criterio de Calinski-Harabasz la cantidad óptima de grupos es 2 para utilizar con kmeans.
+
+```{r}
+library(clusterSim)
+Fs <- c()
+for (k in 2:6) {
+  aux.km <- kmeans(seeds, k)
+  Fs <- c(Fs, index.G1(seeds, aux.km$cluster))
+}
+plot(2:6, Fs, type="l")
+```
+
+### 13. Se equivoca en el 10% de los casos, peor que los otros criterios. Si no estandarizásemos los datos se equivocaría un $8/%$, mejoraría pero no llegaría a superar los otros criterios.
+
+```{r}
+library(mclust)
+model <- Mclust(seeds, G=3)
+plot(model, what="classification")
+
+(cross.table.mix <- table(model$classification, variedad))
+sum(diag(cross.table.mix))/sum(cross.table.mix)
+1-sum(diag(cross.table.mix))/sum(cross.table.mix)
+```
+
+```{r}
+model2 <- Mclust(non.scaled.seeds, G=3)
+plot(model2, what="classification")
+
+(cross.table.mix2 <- table(model2$classification, variedad))
+sum(diag(cross.table.mix2))/sum(cross.table.mix2)
+1-sum(diag(cross.table.mix2))/sum(cross.table.mix2)
+```
+
+### 14. En total, los tres métodos clasifican mal 6 semillas simultáneamente. Que son la 38, 70, 136, 139, 200 y la 202.
+
+```{r}
+# Guardé los id de cada semilla (row name) al principio en la variable nums
+err.ward <- nums[groups.3.ward != variedad]
+err.km <- nums[km$cluster != variedad]
+err.km <- err.km[err.km %in% err.ward]
+err.gauss <- nums[model$classification != variedad]
+
+err <- err.gauss[err.gauss %in% err.km]
+(err <- as.numeric(err))
+length(err)
+```
+
+### 15. Hemos representado el biplot tanto con la función biplot como con cálculos a mano para poder discernir los grupos con colores y los puntos que están mal clasificados resaltarlos. Las semillas mal clasificadas están rodeadas con un círculo negro. Observamos que los errores comunes se producen cuando una semilla de un grupo está situada muy cercana al centroide de los otros grupos o en la frontera entre ambos.
+
+```{r}
+acp <- princomp(seeds)
+
+cols <- variedad
+cols[cols==1] <- "coral"
+cols[cols==2] <- "darkorchid"
+cols[cols==3] <- "green"
+
+Fp <- acp$scores
+Fs <- Fp %*% solve(diag(acp$sdev))
+
+Gp <- acp$loadings
+Gs <- Gp %*% diag(acp$sdev)
+
+plot(Fs[,1], Fs[,2], col=cols, pch=16, cex=0.4, asp = 1, main="Covariance biplot", xlab="comp1", ylab="comp2")
+points(Fs[err,1], Fs[err,2], asp=1, col="black")
+
+arrows(rep(0, length(Gp)), rep(0,length(Gp)), Gs[,1], Gs[,2], length=0.1, angle=10)
+text(x = Gs[,1], y = Gs[,2], label=colnames(seeds), cex=0.4)
+
+biplot(acp)
+```
+
+### 16. 
+
+Para intentar mejorar el resultado se podrían combinar diferentes métodos y usar un criterio democrático para decidir en caso de no haber acuerdo, de este modo los errores se reducirían a aquellas semillas que se clasifican en otro grupo simultáneamente por todos los métodos. 
+
+Aun así, esto tendría un límite. Los datos seguirán una distribución determinada (desconocida) y frente a dicha distribución existe un clasificador teórico llamado clasificador de Bayes que tiene una probabilidad de error que no se puede superar. Por tanto, cualquier método tendrá un cierto error al clasificar. Por ejemplo, existe una probabilidad no nula de que una semilla del grupo 2 se encuentre justo en el centroide del grupo 1, y sería imposible discernir que no es de ese grupo porque se parece más a ese grupo aunque sea improbable.
+
+
+
+
+
