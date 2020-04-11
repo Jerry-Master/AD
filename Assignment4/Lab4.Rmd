@@ -1,5 +1,6 @@
 ---
-title: "R Notebook"
+title: "Assignment 4"
+author: "Jose Pérez Cano & Álvaro Ribot Barrado"
 output:
   pdf_document: default
   html_notebook: default
