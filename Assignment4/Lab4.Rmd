@@ -2,14 +2,18 @@
 title: "Assignment 4"
 author: "Jose Pérez Cano & Álvaro Ribot Barrado"
 output:
-  pdf_document: default
+  html_document:
+    df_print: paged
   html_notebook: default
+  pdf_document: default
 ---
 
 ### 1.
 
 ```{r}
-seeds <- read.table("http://www-eio.upc.es/%7Ejan/Data/MVA/seedsdataset.dat", col.names = c("Area", "Perimeter", "Compacidad", "longitud", "ancho", "coef.asimetria", "long.ranura", "variedad"))
+seeds <- read.table("http://www-eio.upc.es/%7Ejan/Data/MVA/seedsdataset.dat", 
+col.names = c("Area", "Perimeter", "Compacidad", "longitud", 
+              "ancho", "coef.asimetria", "long.ranura", "variedad"))
 head(seeds)
 ```
 
@@ -164,7 +168,8 @@ Fs <- Fp %*% solve(diag(acp$sdev))
 Gp <- acp$loadings
 Gs <- Gp %*% diag(acp$sdev)
 
-plot(Fs[,1], Fs[,2], col=cols, pch=16, cex=0.4, asp = 1, main="Covariance biplot", xlab="comp1", ylab="comp2")
+plot(Fs[,1], Fs[,2], col=cols, pch=16, cex=0.4, asp = 1, 
+     main="Covariance biplot", xlab="comp1", ylab="comp2")
 points(Fs[err,1], Fs[err,2], asp=1, col="black")
 
 arrows(rep(0, length(Gp)), rep(0,length(Gp)), Gs[,1], Gs[,2], length=0.1, angle=10)
