@@ -139,7 +139,7 @@ table(variedad, model$classification)
 ### 14) ????
 
 ```{r}
-(lista <- seeds[variedad != clusters3 && variedad != out_km$cluster && variedad != model$classification,])
+(lista <- seeds[variedad != clusters3 & variedad != out_km$cluster & variedad != model$classification,])
 ```
 
 ### 15)

@@ -1,6 +1,8 @@
 ---
 title: "R Notebook"
-output: html_notebook
+output:
+  pdf_document: default
+  html_notebook: default
 ---
 
 ### 1.
@@ -18,7 +20,7 @@ seeds <- seeds[,-8]
 nums <- row.names(seeds)
 ```
 
-### 3. No se observan grandes anomalías pero sí se observa que hay distribuciones no simétricas como la longitud de ranura y algunos outliers en el coeficiente de asimetría.
+### 3. No se observan grandes anomalías pero sí se observa que hay dist.stribuciones no simétricas como la longitud de ranura y algunos outliers en el coeficiente de asimetría.
 
 ```{r}
 par(mfrow = c(2,4))
@@ -45,18 +47,18 @@ as.matrix(dist.st)[1:5,1:5]
 ### 6. Si a partir de este dendograma tuvieramos que decir que hay tres variedades concluiriamos que dos de ellas solo aparecen en tres semillas y la otra tiene el resto de semillas. Este dendograma no separa demasiado y junta muchas semillas en un mismo grupo, por lo que no queda nada claro que haya tres variedades a partir de este dendograma.
 
 ```{r}
-nearest_neighbour <- hclust(Dist, method = "single")
+nearest_neighbour <- hclust(dist.st, method = "single")
 plot(nearest_neighbour)
 ```
 
 ### 7. Con este método obtenemos mejores separaciones y se ve que está más balanceado el reparto de las semillas por grupo. También vemos que los grandes grupos se juntan más arriba.
 
 ```{r}
-farthest_neighbour <- hclust(Dist, method = "complete")
+farthest_neighbour <- hclust(dist.st, method = "complete")
 plot(farthest_neighbour)
 ```
 
-### 8. La distancia aproximada deberia ser $5.7$. El análisis ha identificado bastante bien a las variedades. De hecho, un $88\%$ de las semillas se identificarían correctamente si suponemos que los clusters coinciden con las variables.
+### 8. La dist.stancia aproximada deberia ser $5.7$. El análisis ha identificado bastante bien a las variedades. De hecho, un $88\%$ de las semillas se identificarían correctamente si suponemos que los clusters coinciden con las variables.
 
 ```{r}
 clusters <- cutree(farthest_neighbour, h = 5.7)
@@ -67,7 +69,7 @@ sum(diag(cross.table))/sum(cross.table)
 ### 9. Se observa que la variedad "Kama" y "Canadian" se agrupan en un cluster y la variedad "Rosa" en otro con tan solo 7 semillas de "Kama" en el cluster 2 y 2 de "Rosa" en el cluster 1. Observamos pues que el "average linkage" separa muy bien las semillas de las variedad 2 de las semillas de las variedades 1 y 3.
 
 ```{r}
-avg_link <- hclust(Dist, method = "average")
+avg_link <- hclust(dist.st, method = "average")
 plot(avg_link)
 clusters2 <- cutree(avg_link, k = 2)
 table(variedad, clusters2)
@@ -174,7 +176,7 @@ biplot(acp)
 
 Para intentar mejorar el resultado se podrían combinar diferentes métodos y usar un criterio democrático para decidir en caso de no haber acuerdo, de este modo los errores se reducirían a aquellas semillas que se clasifican en otro grupo simultáneamente por todos los métodos. 
 
-Aun así, esto tendría un límite. Los datos seguirán una distribución determinada (desconocida) y frente a dicha distribución existe un clasificador teórico llamado clasificador de Bayes que tiene una probabilidad de error que no se puede superar. Por tanto, cualquier método tendrá un cierto error al clasificar. Por ejemplo, existe una probabilidad no nula de que una semilla del grupo 2 se encuentre justo en el centroide del grupo 1, y sería imposible discernir que no es de ese grupo porque se parece más a ese grupo aunque sea improbable.
+Aun así, esto tendría un límite. Los datos seguirán una dist.stribución determinada (desconocida) y frente a dicha dist.stribución existe un clasificador teórico llamado clasificador de Bayes que tiene una probabilidad de error que no se puede superar. Por tanto, cualquier método tendrá un cierto error al clasificar. Por ejemplo, existe una probabilidad no nula de que una semilla del grupo 2 se encuentre justo en el centroide del grupo 1, y sería imposible discernir que no es de ese grupo porque se parece más a ese grupo aunque sea improbable.
 
 
 

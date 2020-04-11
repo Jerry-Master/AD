@@ -142,13 +142,16 @@ length(err)
 
 ```{r}
 acp <- princomp(seeds)
+
 cols <- variedad
 cols[cols==1] <- "blue"
 cols[cols==2] <- "red"
 cols[cols==3] <- "green"
 cols[err] <- "black"
+
 plot(acp$scores[,1], acp$scores[,2], col=cols, asp = 1)
-sc <- 4
+
+sc <- 3
 arrows(rep(0, length(acp$loadings)),rep(0,length(acp$loadings)),sc*acp$loadings[,1], sc*acp$loadings[,2], length=0.1, angle=10)
 text(x = sc*acp$loadings[,1], y = sc*acp$loadings[,2], label=colnames(seeds))
 ```
